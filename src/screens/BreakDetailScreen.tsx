@@ -116,18 +116,52 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
     }
   };
 
-  const formatDateTime = () => {
-    const now = new Date();
-    const date = now.toLocaleDateString('pt-BR', { 
+  const formatDateTime = (dateTimeString?: string, createdAt?: string, updatedAt?: string) => {
+    // Tenta usar dateTime, se não tiver usa createdAt, se não tiver usa updatedAt
+    const dateStr = dateTimeString || createdAt || updatedAt;
+    
+    if (!dateStr) {
+      console.warn('⚠️ Nenhuma data disponível da API, usando horário atual');
+      const now = new Date();
+      return {
+        date: now.toLocaleDateString('pt-BR', { 
+          day: '2-digit', 
+          month: 'long', 
+          year: 'numeric',
+          timeZone: 'America/Sao_Paulo'
+        }),
+        time: now.toLocaleTimeString('pt-BR', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          timeZone: 'America/Sao_Paulo'
+        }),
+        dayOfWeek: now.toLocaleDateString('pt-BR', { 
+          weekday: 'long',
+          timeZone: 'America/Sao_Paulo'
+        })
+      };
+    }
+
+    // Cria objeto Date sem modificar timezone
+    const dateObj = new Date(dateStr);
+    
+    // Força conversão para horário de Brasília (GMT-3)
+    const date = dateObj.toLocaleDateString('pt-BR', { 
       day: '2-digit', 
       month: 'long', 
-      year: 'numeric' 
+      year: 'numeric',
+      timeZone: 'America/Sao_Paulo'
     });
-    const time = now.toLocaleTimeString('pt-BR', { 
+    const time = dateObj.toLocaleTimeString('pt-BR', { 
       hour: '2-digit', 
-      minute: '2-digit' 
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
     });
-    const dayOfWeek = now.toLocaleDateString('pt-BR', { weekday: 'long' });
+    const dayOfWeek = dateObj.toLocaleDateString('pt-BR', { 
+      weekday: 'long',
+      timeZone: 'America/Sao_Paulo'
+    });
+    
     return { date, time, dayOfWeek };
   };
 
@@ -147,14 +181,17 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
   }
 
   const config = getBreakTypeConfig(breakData.breakType);
-  const { date, time, dayOfWeek } = formatDateTime();
+  const { date, time, dayOfWeek } = formatDateTime(
+    breakData.dateTime, 
+    breakData.createdAt, 
+    breakData.updatedAt
+  );
 
   return (
     <ScrollView 
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       showsVerticalScrollIndicator={false}
     >
-      {/* Header com Gradiente */}
       <LinearGradient
         colors={config.gradient}
         style={styles.header}
@@ -174,7 +211,6 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* Card de Data e Hora */}
         <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="calendar" size={20} color={config.color} />
@@ -211,7 +247,6 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
           </View>
         </View>
 
-        {/* Card de Benefícios */}
         <View style={[styles.card, { backgroundColor: config.color + '15' }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="heart" size={20} color={config.color} />
@@ -224,7 +259,6 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
           </Text>
         </View>
 
-        {/* Card de Informações do Usuário */}
         <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="person" size={20} color={theme.colors.primary} />
@@ -252,7 +286,6 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
           </View>
         </View>
 
-        {/* Card de Metadados */}
         <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
           <View style={styles.cardHeader}>
             <Ionicons name="information-circle" size={20} color={theme.colors.info} />
@@ -270,7 +303,6 @@ const BreakDetailScreen: React.FC<BreakDetailScreenProps> = ({
           </View>
         </View>
 
-        {/* Botões de Ação */}
         <View style={styles.actions}>
           <TouchableOpacity
             style={styles.button}
