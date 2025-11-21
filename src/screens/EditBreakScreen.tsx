@@ -36,6 +36,8 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
   const [duration, setDuration] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const breakTypes: BreakTypeOption[] = [
     {
@@ -67,6 +69,7 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
   const loadBreakData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await breakService.getById(breakId);
       setBreakData(data);
       setSelectedType(data.breakType);
@@ -74,36 +77,59 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
       const match = data.durationFormatted.match(/(\d+)min/);
       const mins = match ? match[1] : '0';
       setDuration(mins);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar os dados da pausa');
-      navigation.goBack();
+      setRetryCount(0);
+    } catch (err: any) {
+      const errorMessage = err.message || 'Não foi possível carregar os dados da pausa';
+      setError(errorMessage);
+      Alert.alert(
+        'Erro ao Carregar',
+        errorMessage,
+        [
+          { text: 'Voltar', onPress: () => navigation.goBack() },
+          { text: 'Tentar Novamente', onPress: loadBreakData }
+        ]
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async () => {
+  const validateInputs = (): boolean => {
+    setError(null);
+
     if (!selectedType) {
-      Alert.alert('Erro', 'Selecione o tipo de pausa');
-      return;
+      setError('Selecione o tipo de pausa');
+      return false;
     }
 
     const durationNum = parseInt(duration);
     if (!duration || isNaN(durationNum) || durationNum <= 0) {
-      Alert.alert('Erro', 'Insira uma duração válida (em minutos)');
-      return;
+      setError('Insira uma duração válida (em minutos)');
+      return false;
     }
 
     if (durationNum > 3) {
-      Alert.alert('Erro', 'A duração máxima é de 3 minutos');
+      setError('A duração máxima é de 3 minutos');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateInputs()) {
       return;
     }
 
+    const durationNum = parseInt(duration);
+
     try {
       setSaving(true);
+      setError(null);
+
       await breakService.update(breakId, {
         userId,
-        breakType: selectedType,
+        breakType: selectedType!,
         durationSeconds: minutesToSeconds(durationNum),
       });
 
@@ -113,8 +139,10 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
           onPress: () => navigation.goBack(),
         },
       ]);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível atualizar a pausa');
+    } catch (err: any) {
+      const errorMessage = err.message || 'Não foi possível atualizar a pausa';
+      setError(errorMessage);
+      Alert.alert('Erro ao Atualizar', errorMessage);
     } finally {
       setSaving(false);
     }
@@ -124,6 +152,31 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={[styles.loadingText, { color: theme.colors.textLight }]}>
+          Carregando dados...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error && !breakData) {
+    return (
+      <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.errorCard, { backgroundColor: theme.colors.card }]}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={[styles.errorTitle, { color: theme.colors.text }]}>
+            Erro ao Carregar
+          </Text>
+          <Text style={[styles.errorMessage, { color: theme.colors.textLight }]}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: theme.colors.primary }]}
+            onPress={loadBreakData}
+          >
+            <Text style={styles.retryButtonText}>Tentar Novamente</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -131,6 +184,14 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
+        {error && (
+          <View style={[styles.errorBanner, { backgroundColor: theme.colors.error + '15' }]}>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+              ⚠️ {error}
+            </Text>
+          </View>
+        )}
+
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tipo de Pausa</Text>
         <View style={styles.typeGrid}>
           {breakTypes.map((option) => (
@@ -147,7 +208,11 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
                   borderColor: option.color,
                 },
               ]}
-              onPress={() => setSelectedType(option.type)}
+              onPress={() => {
+                setSelectedType(option.type);
+                setError(null);
+              }}
+              disabled={saving}
             >
               <Text style={styles.typeIcon}>{option.icon}</Text>
               <Text
@@ -170,14 +235,18 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
             { 
               backgroundColor: theme.colors.card,
               color: theme.colors.text,
-              borderColor: theme.colors.gray300 
+              borderColor: error && !selectedType ? theme.colors.error : theme.colors.gray300
             }
           ]}
           placeholder="Ex: 3"
           keyboardType="numeric"
           value={duration}
-          onChangeText={setDuration}
+          onChangeText={(text) => {
+            setDuration(text);
+            setError(null);
+          }}
           placeholderTextColor={theme.colors.gray400}
+          editable={!saving}
         />
 
         <View style={styles.quickDurations}>
@@ -185,7 +254,11 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
             <TouchableOpacity
               key={mins}
               style={[styles.quickButton, { backgroundColor: theme.colors.gray200 }]}
-              onPress={() => setDuration(mins.toString())}
+              onPress={() => {
+                setDuration(mins.toString());
+                setError(null);
+              }}
+              disabled={saving}
             >
               <Text style={[styles.quickButtonText, { color: theme.colors.text }]}>{mins} min</Text>
             </TouchableOpacity>
@@ -202,7 +275,10 @@ const EditBreakScreen: React.FC<EditBreakScreenProps> = ({ navigation, route }) 
           disabled={saving}
         >
           {saving ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#FFFFFF" size="small" />
+              <Text style={[styles.submitButtonText, { marginLeft: 8 }]}>Salvando...</Text>
+            </View>
           ) : (
             <Text style={styles.submitButtonText}>💾 Salvar Alterações</Text>
           )}
@@ -221,8 +297,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorCard: {
+    padding: 24,
+    borderRadius: 20,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
+  errorIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   content: {
     padding: 16,
+  },
+  errorBanner: {
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 18,
