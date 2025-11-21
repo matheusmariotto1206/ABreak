@@ -10,7 +10,7 @@
 
 **Promovendo saúde e bem-estar no ambiente de trabalho através de pausas conscientes**
 
-[🎥 Vídeo Demonstração](#-vídeo-de-apresentação) • [📱 Funcionalidades](#-funcionalidades) • [🚀 Instalação](#-como-executar-o-projeto) • [🏗️ Arquitetura](#️-arquitetura-do-projeto)
+[🎥 Vídeo Demonstração](#-vídeo-de-apresentação) • [🚀 Instalação](#-como-executar-o-projeto) • [🏗️ Arquitetura](#️-arquitetura-do-projeto)
 
 </div>
 
@@ -32,11 +32,11 @@
 
 ## 👥 Integrantes do Projeto
 
-- **[Matheus Barbosa Mariotto]** - RM[560276] 
-- **[Felipe Anselmo]** - RM[560661] 
-- **[João Vinícius]** - RM[559369] 
+- **[Matheus Barbosa Mariotto]** - RM560276
+- **[Felipe Anselmo]** - RM560661
+- **[João Vinícius]** - RM559369
 
-> 💡 **Nota**: Este projeto foi desenvolvido como parte da disciplina de [Nome da Disciplina].
+
 
 ---
 
