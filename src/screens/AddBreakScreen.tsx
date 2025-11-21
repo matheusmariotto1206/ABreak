@@ -34,6 +34,7 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
   const [selectedType, setSelectedType] = useState<BreakType | null>(null);
   const [duration, setDuration] = useState('3');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const breakTypes: BreakTypeOption[] = [
     {
@@ -56,28 +57,42 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
     },
   ];
 
-  const handleSubmit = async () => {
+  const validateInputs = (): boolean => {
+    setError(null);
+
     if (!selectedType) {
-      Alert.alert('Erro', 'Selecione o tipo de pausa');
-      return;
+      setError('Selecione o tipo de pausa');
+      return false;
     }
 
     const durationNum = parseInt(duration);
     if (!duration || isNaN(durationNum) || durationNum <= 0) {
-      Alert.alert('Erro', 'Insira uma duração válida (em minutos)');
-      return;
+      setError('Insira uma duração válida (em minutos)');
+      return false;
     }
 
     if (durationNum > 3) {
-      Alert.alert('Erro', 'A duração máxima é de 3 minutos');
+      setError('A duração máxima é de 3 minutos');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateInputs()) {
       return;
     }
 
+    const durationNum = parseInt(duration);
+
     try {
       setLoading(true);
+      setError(null);
+
       await breakService.create({
         userId,
-        breakType: selectedType,
+        breakType: selectedType!,
         durationSeconds: minutesToSeconds(durationNum),
       });
 
@@ -87,8 +102,10 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
           onPress: () => navigation.goBack(),
         },
       ]);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível registrar a pausa. Verifique se o usuário existe.');
+    } catch (err: any) {
+      const errorMessage = err.message || 'Não foi possível registrar a pausa';
+      setError(errorMessage);
+      Alert.alert('Erro ao Registrar', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -97,6 +114,14 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.content}>
+        {error && (
+          <View style={[styles.errorBanner, { backgroundColor: theme.colors.error + '15' }]}>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+              ⚠️ {error}
+            </Text>
+          </View>
+        )}
+
         <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tipo de Pausa</Text>
         <View style={styles.typeGrid}>
           {breakTypes.map((option) => (
@@ -113,7 +138,11 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
                   borderColor: option.color,
                 },
               ]}
-              onPress={() => setSelectedType(option.type)}
+              onPress={() => {
+                setSelectedType(option.type);
+                setError(null);
+              }}
+              disabled={loading}
             >
               <Text style={styles.typeIcon}>{option.icon}</Text>
               <Text
@@ -136,14 +165,18 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
             { 
               backgroundColor: theme.colors.card,
               color: theme.colors.text,
-              borderColor: theme.colors.gray300 
+              borderColor: error && !selectedType ? theme.colors.error : theme.colors.gray300
             }
           ]}
           placeholder="Ex: 3"
           keyboardType="numeric"
           value={duration}
-          onChangeText={setDuration}
+          onChangeText={(text) => {
+            setDuration(text);
+            setError(null);
+          }}
           placeholderTextColor={theme.colors.gray400}
+          editable={!loading}
         />
 
         <View style={styles.quickDurations}>
@@ -151,7 +184,11 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
             <TouchableOpacity
               key={mins}
               style={[styles.quickButton, { backgroundColor: theme.colors.gray200 }]}
-              onPress={() => setDuration(mins.toString())}
+              onPress={() => {
+                setDuration(mins.toString());
+                setError(null);
+              }}
+              disabled={loading}
             >
               <Text style={[styles.quickButtonText, { color: theme.colors.text }]}>{mins} min</Text>
             </TouchableOpacity>
@@ -168,7 +205,10 @@ const AddBreakScreen: React.FC<AddBreakScreenProps> = ({ navigation, route }) =>
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator color="#FFFFFF" size="small" />
+              <Text style={[styles.submitButtonText, { marginLeft: 8 }]}>Registrando...</Text>
+            </View>
           ) : (
             <Text style={styles.submitButtonText}>✅ Registrar Pausa</Text>
           )}
@@ -184,6 +224,18 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+  },
+  errorBanner: {
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
   sectionTitle: {
     fontSize: 18,
@@ -267,6 +319,10 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
