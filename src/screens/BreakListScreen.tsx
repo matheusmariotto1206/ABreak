@@ -127,17 +127,41 @@ const BreakListScreen: React.FC<BreakListScreenProps> = ({ navigation, route }) 
     }
   };
 
-  const formatDateTime = (item: BreakDTO) => {
-    // Simulando data/hora - você pode ajustar conforme sua API retorna
-    const now = new Date();
-    const date = now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-    const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const formatDateTime = (dateTimeString?: string) => {
+    if (!dateTimeString) {
+      const now = new Date();
+      return {
+        date: now.toLocaleDateString('pt-BR', { 
+          day: '2-digit', 
+          month: 'short',
+          timeZone: 'America/Sao_Paulo'
+        }),
+        time: now.toLocaleTimeString('pt-BR', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          timeZone: 'America/Sao_Paulo'
+        })
+      };
+    }
+
+    const dateObj = new Date(dateTimeString);
+    
+    const date = dateObj.toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: 'short',
+      timeZone: 'America/Sao_Paulo'
+    });
+    const time = dateObj.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'America/Sao_Paulo'
+    });
     return { date, time };
   };
 
   const renderBreakItem = ({ item }: { item: BreakDTO }) => {
     const config = getBreakTypeConfig(item.breakType);
-    const { date, time } = formatDateTime(item);
+    const { date, time } = formatDateTime(item.dateTime);
 
     return (
       <Animated.View style={styles.breakCardWrapper}>
@@ -146,7 +170,6 @@ const BreakListScreen: React.FC<BreakListScreenProps> = ({ navigation, route }) 
           onPress={() => navigation.navigate('BreakDetail', { breakId: item.id })}
           activeOpacity={0.7}
         >
-          {/* Header com Badge e Duração */}
           <View style={styles.breakHeader}>
             <LinearGradient
               colors={config.gradient}
@@ -166,7 +189,6 @@ const BreakListScreen: React.FC<BreakListScreenProps> = ({ navigation, route }) 
             </View>
           </View>
 
-          {/* Data e Hora */}
           <View style={styles.dateTimeContainer}>
             <View style={styles.dateTimeItem}>
               <Ionicons name="calendar-outline" size={14} color={theme.colors.textLight} />
@@ -182,7 +204,6 @@ const BreakListScreen: React.FC<BreakListScreenProps> = ({ navigation, route }) 
             </View>
           </View>
 
-          {/* Informações do Usuário com Avatar */}
           <View style={styles.userSection}>
             <View style={[styles.avatar, { backgroundColor: config.color + '30' }]}>
               <Ionicons name="person" size={16} color={config.color} />
