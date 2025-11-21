@@ -44,7 +44,7 @@
 
 [![Vídeo de Apresentação](https://img.shields.io/badge/YouTube-Assistir_Demonstração-red?style=for-the-badge&logo=youtube)](https://youtube.com/seu-video-aqui)
 
-**📹 [Link do vídeo no YouTube](https://youtube.com/seu-video-aqui)**
+**📹 [Link do vídeo no YouTube](https://youtu.be/Sn2BZ2j1abQ)**
 
 ---
 
@@ -387,42 +387,6 @@ timeZone: 'America/Sao_Paulo'
 
 ---
 
-## 🎯 Melhorias Para Avaliação
-
-### ✅ Item 1: Datas Reais (+4 pontos)
-- Formatação em pt-BR
-- Timezone de Brasília
-- Cache para consistência
-- Fallback seguro
-
-**Resultado**: Arquitetura 16→20 ✅
-
-### ✅ Item 2: README Completo (Evita -10 pts)
-- Todas funcionalidades documentadas
-- Instruções detalhadas
-- Diagramas de arquitetura
-- Troubleshooting completo
-
-**Resultado**: +10 pontos ✅
-
-### ✅ Item 3: Tratamento de Erros (+5 pontos)
-- Retry automático (2x)
-- Mensagens específicas
-- Loading states
-- Validação robusta
-- Error banners
-- Timeout aumentado
-
-**Resultado**: CRUD 35→40 ✅
-
-### 📊 Pontuação Final
-
-| Critério | Pontos |
-|----------|--------|
-| Arquitetura | 20/20 ✅ |
-| CRUD | 40/40 ✅ |
-| README | 10/10 ✅ |
-| **TOTAL** | **70/70** 🎉 |
 
 ---
 
